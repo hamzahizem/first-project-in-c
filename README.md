@@ -1,2 +1,2 @@
-# first-project-in-c
-this is my first complet project in c
+# http server in c
+basic http server written in c
