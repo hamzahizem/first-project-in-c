@@ -1,2 +1,2 @@
-# http server in c
-basic http server written in c
+# message system in c
+basic message system in c
