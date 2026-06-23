@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-
+#include <signal.h>
 void error(const char *msg){
     perror(msg);
     exit(1);
@@ -16,7 +16,7 @@ int main(int argc,char *argv[])
     if(argc < 2){
         fprintf(stderr ,"port is not provided , pls write the port pls.\n");
         exit(1);}
-    int sockfd , newsockfd , portno,n;
+    int sockfd , newsockfd , portno,n,t=1;
     char buffer[255],str[255];
     struct sockaddr_in serv_addr , cli_addr;
     socklen_t clilen;
@@ -39,24 +39,32 @@ int main(int argc,char *argv[])
         error("error on accepting the conection");
     }
     pid_t pid = fork();
-    if (pid==0){
-        while(1){
-        bzero(buffer,255);
-        n = read(newsockfd,buffer,255);
-        if (n<0){
-            error("error in reading");
-        }
-        printf("client : %s\n",buffer);
-    }}
     if (pid>0){
+        while(t){
+        bzero(buffer,255);
+        n = recv(newsockfd,buffer,255,0);
+        if (n<0){
+            error("error in reading");}
+
+        if(n==0){
+            printf("the Client has disconected from server.\n");
+            kill(pid,SIGTERM);
+            t=0;
+        }
+        if(n>0){
+        printf("Client :%s\n",buffer);
+        }
+    }}
+    if (pid==0){
         while(1){
         bzero(str,255);
         fgets(str,255,stdin);
-        n=write(newsockfd,str,strlen(str));
+        n=send(newsockfd,str,strlen(str)-1,0);
         if(n<0){
-            error("error while writeing.");
+            error("error while writeing.");}
+
         }
-        }
+
     }
 
 

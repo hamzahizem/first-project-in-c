@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-
+#include <signal.h>
 void error(const char *msg){
     perror(msg);
     exit(1);
@@ -15,7 +15,7 @@ int main(int argc,char *argv[]){
     if(argc < 3){
         fprintf(stderr ,"usage %s hotname port \n",argv[0]);
         exit(1);}
-    int sockfd , portno,n;
+    int sockfd , portno,n,t=1;
     char buffer[255],str[255];
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -34,20 +34,27 @@ int main(int argc,char *argv[]){
             error("connection error");
         }
         pid_t pid = fork();
-    if (pid==0){
-        while(1){
+    if (pid>0){
+        while(t){
         bzero(buffer,255);
         n = read(sockfd,buffer,255);
         if (n<0){
             error("error in reading");
         }
-        printf("client : %s\n",buffer);
+        if(n==0){
+            printf("the Server has disconected from server.\n");
+            kill(pid,SIGTERM);
+            t=0;
+        }
+        if (n>0){
+        printf("Server :%s\n",buffer);
+        }
     }}
-    if (pid>0){
+    if (pid==0){
         while(1){
         bzero(str,255);
         fgets(str,255,stdin);
-        n=write(sockfd,str,strlen(str));
+        n=write(sockfd,str,strlen(str)-1);
         if(n<0){
             error("error while writeing.");
         }
