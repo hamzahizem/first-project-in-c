@@ -1,32 +1,31 @@
-# Single-Process TCP Relay Server (`poll`)
+# Single-Process TCP Relay Room (`poll`) & Duplex Client
 
-A lightweight C-based TCP relay server designed to bridge communication between two network clients. 
+A complete C-based client-server networking utility designed to bridge communication between two remote network users. 
 
-### The Architecture Shift: `fork()` vs `poll()`
-Originally, this project split the workload into parent and child processes using `fork()`, which required shared memory (`mmap`) to sync connection states. 
+The project features a high-performance **I/O Multiplexed Server** built with `poll()` and a **Full-Duplex Client** utilizing `fork()`.
 
-This version completely removes multi-processing in favor of **I/O Multiplexing via `poll()`**. The entire application now monitors the listening port and all active client connections within a **single thread**, drastically simplifying the codebase and removing cross-process race conditions.
+## System Architecture
 
-## Key Improvements
-* **No More `fork()` Overhead:** Zero process creation cost and zero need for shared memory allocations.
-* **Dynamic Slot Re-use:** If a client disconnects, its slot in the poll array is set back to `-1`. The server immediately accepts a new incoming connection to fill that empty space without affecting the remaining client.
-* **Safe Memory Management:** Replaced string-based tracking (`strlen`) with explicit raw network byte sizing to prevent buffer overflows and memory corruption.
+### 1. The Relay Server (`poll`)
+The server acts as a central room. It completely removes the overhead of multi-processing by running entirely inside a **single thread**. 
+* **I/O Multiplexing:** Using `poll()`, it monitors the main listening port and up to 2 active client file descriptors simultaneously without blocking.
+* **Dynamic Slot Re-use:** If a client disconnects, its index slot is set back to `-1`. The server immediately accepts a new incoming connection to fill that empty space without affecting the remaining client's session.
+* **Safe Byte Forwarding:** Replaced string-based tracking (`strlen`) with raw network byte sizing to prevent buffer overflows and memory corruption.
 
-## How to Run
+### 2. The Chat Client (`fork`)
+The client connects directly to the relay server using a hostname and port.
+* **Dual-Process Duplexing:** It utilizes `fork()` to split into a parent and child process. 
+  - **Parent Process:** Continuously reads incoming messages from the socket and prints them to the terminal. If the server goes down, it cleanly kills the child process using `SIGTERM`.
+  - **Child Process:** Continously listens to user input via `stdin` (`fgets`) and sends it over the wire instantly.
 
-1. **Compile:**
-   ```bash
-   gcc -o relay_server main.c
+---
 
-   Run the Server:
-   
-    ./relay_server 8080
+## How to Get Started
 
-    Connect Two Clients:
-    Open two separate terminals and bridge them using netcat:
-    Bash
+### 1. Compile Both Files
+```bash
+# Compile the Server
+gcc -o relay_server server.c
 
-    nc localhost 8080
-
-
-This clearly explains to anyone looking at your GitHub that you upgraded the project's design to a cleaner, production-standard approach! Ready to push it to your repository?
+# Compile the Client
+gcc -o chat_client client.c
