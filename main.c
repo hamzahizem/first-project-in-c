@@ -77,14 +77,7 @@ int main(int argc,char *argv[]){
                 fds[2].fd = -1;
                 i--;
             } else if (fds[1].fd != -1) {
-                send(fds[1].fd, buffer, n, 0);
-            }
-        }
-
-
-        }
-
-
+                send(fds[1].fd, buffer, n, 0);}}}
     close(newsockfd);
     close(sockfdto);
     close(sockfd);
